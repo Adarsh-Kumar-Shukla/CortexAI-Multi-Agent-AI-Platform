@@ -7,22 +7,40 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies and Outputs
 node_modules
 dist
 dist-ssr
-*.local
+coverage/
+.nyc_output/
+
+# OS Files
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+.vscode/settings.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Build caches
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+*.tsbuildinfo
+
+# Environment and Credentials
 .env
 .env.*
-serviceAccountKey.json
-serviceAccountKey.json.json
+*.local
+!.env.example
+serviceAccountKey*.json
