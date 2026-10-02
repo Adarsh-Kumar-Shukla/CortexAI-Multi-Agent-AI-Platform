@@ -12,7 +12,7 @@ app.use(express.json())
 app.use("/", router)
 
 app.listen(port, ()=>{
-  console.log(`gateway started at ${port}`)
+  console.log(`auth started at ${port}`)
   connectDB()
 })
 
