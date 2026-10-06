@@ -1,22 +1,23 @@
-import express from "express"
-import dotenv from "dotenv"
-import connectDB from "./config/db.js"
-import router from "./routes/agent.route.js"
+import "dotenv/config";
 
-dotenv.config()
+import express from "express";
 
-const port=process.env.PORT
+import connectDB from "./config/db.js";
+import router from "./routes/agent.route.js";
 
-const app=express()
-app.use(express.json())
+const port = process.env.PORT;
 
-app.use("/", router)
+const app = express();
 
-app.listen(port, ()=>{
-  console.log(`chat started at ${port}`)
-  connectDB()
-})
+app.use(express.json());
 
-app.get("/", (req, res)=>{
-  res.json({message:"hello from agent"})
-})
+app.use("/", router);
+
+app.listen(port, () => {
+  console.log(`chat started at ${port}`);
+  connectDB();
+});
+
+app.get("/", (req, res) => {
+  res.json({ message: "hello from agent" });
+});

@@ -1,6 +1,8 @@
 import { ChatGroq } from "@langchain/groq"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 
+console.log("GROQ_API_KEY loaded:", !!process.env.GROQ_API_KEY);
+
 const groq = new ChatGroq({
     model: "openai/gpt-oss-120b",
     temperature: 0,

@@ -59,7 +59,7 @@ export const logOut=async (req, res)=>{
   try {
     const sessionId=req.cookies?.session
     await redis.del(`session-${sessionId}`)
-    res.clearCookies("session")
+    res.clearCookie("session")
     return res.status(200).json({message:"logout successfully"})
   } catch (error) {
     return res.status(500).json({
