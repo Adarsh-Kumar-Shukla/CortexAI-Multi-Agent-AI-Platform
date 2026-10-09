@@ -1,7 +1,10 @@
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages"
 import { getModel } from "../config/llmModel.js"
+import { getMemory } from "../config/memory.js"
 
 export const chatAgent=async(state)=>{
   const llm=await getModel("chat")
+  const history=await getMemory(state.conversationId)
   const prompt=`you are CortextAI, an intelligent AI assistant. 
 
   Roles:
@@ -17,16 +20,26 @@ export const chatAgent=async(state)=>{
     - Never write headings and content on the same line.
     - Never generate large walls of text.
   `
-  const response=await llm.invoke([
-    {
-      "role":"system",
-      "content":prompt
-    },
-    {
-      "role":"human",
-      "content":state.prompt
+  const messages=[
+    new SystemMessage(prompt)
+  ]
+
+  history.forEach(msg => {
+    if(msg.role=="user"){
+      messages.push(new HumanMessage(msg.content))
     }
-  ])
+    if(msg.role=="assistant"){
+      messages.push(new AIMessage(msg.content))
+    }
+  });
+
+  messages.push(new HumanMessage(state.prompt))
+
+  console.log(messages)
+
+
+  
+  const response=await llm.invoke(messages)
   return {
     ...state,
     aiResponse:response.content
