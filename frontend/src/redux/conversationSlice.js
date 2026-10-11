@@ -1,23 +1,42 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const conversationSlice=createSlice({
-  name:"user",
-  initialState:{
-    conversations:[],
-    selectedConversation:null
+const conversationSlice = createSlice({
+  name: "user",
+  initialState: {
+    conversations: [],
+    selectedConversation: null,
   },
-  reducers:{
-    setConversations:(state, action)=>{
-      state.conversations=action.payload
+  reducers: {
+    setConversations: (state, action) => {
+      state.conversations = action.payload;
     },
-    addConversation:(state, action)=>{
-      state.conversations.unshift(action.payload)
+    addConversation: (state, action) => {
+      state.conversations.unshift(action.payload);
     },
-    setSelectedConversation:(state, action)=>{
-      state.selectedConversation=action.payload
+    setSelectedConversation: (state, action) => {
+      state.selectedConversation = action.payload;
     },
-  }
-})
+    setConversationTitle: (state, action) => {
+      const { title, conversationId } = action.payload;
 
-export const {setConversations, addConversation, setSelectedConversation}=conversationSlice.actions
-export default conversationSlice.reducer
+      state.conversations = state.conversations.map((conv) =>
+        conv._id === conversationId ? { ...conv, title } : conv,
+      );
+
+      if (state.selectedConversation?._id === conversationId) {
+        state.selectedConversation = {
+          ...state.selectedConversation,
+          title,
+        };
+      }
+    },
+  },
+});
+
+export const {
+  setConversations,
+  addConversation,
+  setSelectedConversation,
+  setConversationTitle,
+} = conversationSlice.actions;
+export default conversationSlice.reducer;
