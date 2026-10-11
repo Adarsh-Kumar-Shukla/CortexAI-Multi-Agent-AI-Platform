@@ -5,7 +5,15 @@ import { getMemory } from "../config/memory.js"
 export const chatAgent=async(state)=>{
   const llm=await getModel("chat")
   const history=await getMemory(state.conversationId)
+  const searchContext=state.serachResults?`Web Search Results: ${JSON.stringify(state.serachResults)} Answer the user using only the above search results.`:""
+
+
   const prompt=`you are CortextAI, an intelligent AI assistant. 
+
+  ${searchContext}
+  If searchContext exists: 
+  - Use search results to answer.
+  - Do not mention internal tools.
 
   Roles:
   - For simple questions, greetings, and short queries, response naturally in plain text.
