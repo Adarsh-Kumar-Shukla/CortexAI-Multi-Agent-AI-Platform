@@ -28,6 +28,7 @@ export const agent = async (req, res) => {
 
     const answer = result.aiResponse ?? "";
     const images = result.images ?? [];
+    const artifacts = result.artifacts ?? []
 
     // Save messages to conversational memory
     await addMessage(conversationId, "user", prompt);
@@ -39,11 +40,12 @@ export const agent = async (req, res) => {
       role: "assistant",
       content: answer,
       images,
+      artifacts
     });
-
     return res.status(200).json({
       answer,
       images,
+      artifacts
     });
   } catch (error) {
     console.error(

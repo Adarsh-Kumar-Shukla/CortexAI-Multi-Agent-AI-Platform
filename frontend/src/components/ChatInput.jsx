@@ -59,6 +59,7 @@ const ChatInput = () => {
     const payload={
       prompt:value.trim(), conversationId:conversation?._id, agent:seletedAgent.toLowerCase()
     }
+
     dispatch(addMessage({role:"user", content:value.trim()}))
     setValue("")
     const data=await sendMessage(payload)
@@ -102,7 +103,7 @@ const ChatInput = () => {
           disabled={!value}
           onClick={handleSendMessage}
           className={`flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer transition-all duration-150 ${value.trim() ? "bg-linear-to-br from-red-500 to-violet-700 hover:opacity-90 text-white" : "bg-white/[0.05] text-slate-600 cursor-not-allowed "}`}>
-            <Send size={15}/>
+            <Send size={20}/>
           </button>
         </div>
       </div>
