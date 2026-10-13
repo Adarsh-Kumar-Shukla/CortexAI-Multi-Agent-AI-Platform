@@ -1,98 +1,134 @@
-import { getModel } from "../config/llmModel.js"
 
-export const coding=async(state)=>{
-  const intentLlm=await getModel("intent")
-  const llm=await getModel("coding")
-  const intentResponse=await intentLlm.invoke(`
-    You are an intent classifier. Return ONLY one of these values.
-    CODE_GENERATION
-    CODE_REVIEW
-    CODE_EXPLANATION
-    DEBUGGING
-    OPTIMIZATION
-    CONVERSION
-    DOCUMENTATION
-    User Request:${state.prompt}
-  `)
-  const intent=intentResponse.content
-  if(intent=="CODE_GENERATION"){
-    const prompt=`
-    You are CortextAI Coding Agent.
-    Generate the requested project.
-    Default stack:
-    - HTML
-    - CSS
-    - JavaScript
+import { getModel } from "../config/llmModel.js";
 
-    Use React/ Next.js/ Vue ONLY if explicitly requected.
-    Rules: 
-    - Responsive
-    - Modern UI
-    - CSS Variables
-    - Flexbox/Grid
-    - Smooth Scroll
-    - Hover Effects
-    - Beutiful spacing
-    - Single page unless user aks otherwise.
+export const coding = async (state) => {
+  const intentLlm = await getModel("intent");
+  const llm = await getModel("coding");
 
-    Return ONLY valid JSON.
+  const intentResponse = await intentLlm.invoke(`
+Classify the user's request.
+Return exactly one label:
+CODE_GENERATION
+CODE_REVIEW
+CODE_EXPLANATION
+DEBUGGING
+OPTIMIZATION
+CONVERSION
+DOCUMENTATION
 
-    Schema:
-    {
-      "files":[
-      {
-        "files":"index.html,
-        "content":"..."
-      },
-      {
-        "files":"style.css,
-        "content":"..."
-      },
-      {
-        "files":"script.js,
-        "content":"..."
-      }
-      ]
-    }
-      Rules:
-      - Outputs must start with {
-      - Output must end with }
-      - No markdown
-      - No extra text
-      - No \`\`\`
-      - Never mention intent
+User request: ${state.prompt}
+`);
 
-      User Request: ${state.prompt}
-    `
-    const res=await llm.invoke(prompt)
-    const data=JSON.parse(res.content)
-    return {
-      ...state,
-      aiResponse:"Code generated successfully.",
-      artifacts:[
-        {
-          id:Date.now(),
-          type:"Project",
-          files:data.files || []
-        }
-      ]
-    }
-  }
-  const res=await llm.invoke(`The user's request is ${intent} 
-    Return Markdown only.
-    Never generate project files.
-    Use headlings like:
-    # Overfiew
-    ## Explaination
-    ## Problems 
-    ## Improvements
-    ## Best Practices
-    ## Optimized Code (if needed)
-    User Reques: ${state.prompt}`)
-    const data= res.content
-    return {
-      ...state,
-      aiResponse:data,
-      artifacts:[]
-    }
+  const intent = String(intentResponse.content)
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z_]/g, "");
+
+  console.log("Detected coding intent:", intent);
+
+  if (intent === "CODE_GENERATION") {
+    const prompt = `
+You are CortextAI Coding Agent.
+
+Generate the requested project.
+Default stack: HTML, CSS, and JavaScript.
+Use React, Next.js, or Vue only if explicitly requested.
+Make the project responsive, modern, and functional.
+
+For IMAGES:
+- Always use real Unsplash images.
+- Never use placeholder.
+
+Return ONLY valid JSON in this exact structure:
+{
+  "files": [
+    {"name": "index.html", "content": "..."},
+    {"name": "style.css", "content": "..."},
+    {"name": "script.js", "content": "..."}
+  ]
 }
+
+Requirements:
+- Every file must have a name and content.
+- Escape special characters correctly for JSON.
+- Do not use Markdown fences.
+- Do not include explanations outside the JSON.
+- Generate the files needed for the user's request.
+
+
+
+User request: ${state.prompt}
+`;
+
+    const response = await llm.invoke(prompt);
+    const raw = String(response.content ?? "").trim();
+
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "");
+
+    let data;
+
+    try {
+      data = JSON.parse(cleaned);
+    } catch (error) {
+      console.error("Project JSON parsing failed:", error.message);
+      throw new Error("Coding model returned invalid JSON.");
+    }
+
+    if (!Array.isArray(data.files) || data.files.length === 0) {
+      throw new Error("Coding model returned no project files.");
+    }
+
+    const files = data.files.map((file) => ({
+      name: file.name,
+      content: file.content,
+    }));
+
+    if (
+      files.some(
+        (file) =>
+          typeof file.name !== "string" ||
+          typeof file.content !== "string"
+      )
+    ) {
+      throw new Error("Generated files have an invalid structure.");
+    }
+
+    const artifacts = [
+      {
+        id: Date.now(),
+        type: "Project",
+        title: state.prompt,
+        files,
+      },
+    ];
+
+    console.log("Generated artifacts:", JSON.stringify(artifacts));
+
+    return {
+      ...state,
+      aiResponse: "Code generated successfully.",
+      artifacts,
+    };
+  }
+
+  const response = await llm.invoke(`
+You are CortextAI Coding Agent.
+
+The user's request is classified as: ${intent}.
+
+Return Markdown only.
+Do not generate project files.
+Use appropriate headings for the explanation, problems, improvements,
+best practices, and optimized code when relevant.
+
+User request: ${state.prompt}
+`);
+
+  return {
+    ...state,
+    aiResponse: String(response.content ?? ""),
+    artifacts: [],
+  };
+};
