@@ -1,14 +1,20 @@
-import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages"
-import { getModel } from "../config/llmModel.js"
-import { getMemory } from "../config/memory.js"
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
+import { getModel } from "../config/llmModel.js";
+import { getMemory } from "../config/memory.js";
 
-export const chatAgent=async(state)=>{
-  const llm=await getModel("chat")
-  const history=await getMemory(state.conversationId)
-  const searchContext=state.serachResults?`Web Search Results: ${JSON.stringify(state.serachResults)} Answer the user using only the above search results.`:""
+export const chatAgent = async (state) => {
+  try {
+    const llm = await getModel("chat");
+    const history = await getMemory(state.conversationId);
+    const searchContext = state.serachResults
+      ? `Web Search Results: ${JSON.stringify(state.serachResults)} Answer the user using only the above search results.`
+      : "";
 
-
-  const prompt=`you are CortextAI, an intelligent AI assistant. 
+    const prompt = `you are CortextAI, an intelligent AI assistant. 
 
   ${searchContext}
   If searchContext exists: 
@@ -27,26 +33,29 @@ export const chatAgent=async(state)=>{
     - Keep paragraphs shorts and readable.
     - Never write headings and content on the same line.
     - Never generate large walls of text.
-  `
-  const messages=[
-    new SystemMessage(prompt)
-  ]
+  `;
+    const messages = [new SystemMessage(prompt)];
 
-  history.forEach(msg => {
-    if(msg.role=="user"){
-      messages.push(new HumanMessage(msg.content))
-    }
-    if(msg.role=="assistant"){
-      messages.push(new AIMessage(msg.content))
-    }
-  });
+    history.forEach((msg) => {
+      if (msg.role == "user") {
+        messages.push(new HumanMessage(msg.content));
+      }
+      if (msg.role == "assistant") {
+        messages.push(new AIMessage(msg.content));
+      }
+    });
 
-  messages.push(new HumanMessage(state.prompt))
+    messages.push(new HumanMessage(state.prompt));
 
-  
-  const response=await llm.invoke(messages)
-  return {
-    ...state,
-    aiResponse:response.content
+    const response = await llm.invoke(messages);
+    return {
+      ...state,
+      aiResponse: response.content,
+    };
+  } catch (error) {
+    return {
+      ...state,
+      aiResponse: `Failed to generate response.`,
+    };
   }
-}
+};

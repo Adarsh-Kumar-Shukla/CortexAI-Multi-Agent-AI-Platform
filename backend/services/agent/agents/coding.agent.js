@@ -1,11 +1,11 @@
-
 import { getModel } from "../config/llmModel.js";
 
 export const coding = async (state) => {
-  const intentLlm = await getModel("intent");
-  const llm = await getModel("coding");
+  try {
+    const intentLlm = await getModel("intent");
+    const llm = await getModel("coding");
 
-  const intentResponse = await intentLlm.invoke(`
+    const intentResponse = await intentLlm.invoke(`
 Classify the user's request.
 Return exactly one label:
 CODE_GENERATION
@@ -19,15 +19,15 @@ DOCUMENTATION
 User request: ${state.prompt}
 `);
 
-  const intent = String(intentResponse.content)
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z_]/g, "");
+    const intent = String(intentResponse.content)
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z_]/g, "");
 
-  console.log("Detected coding intent:", intent);
+    console.log("Detected coding intent:", intent);
 
-  if (intent === "CODE_GENERATION") {
-    const prompt = `
+    if (intent === "CODE_GENERATION") {
+      const prompt = `
 You are CortextAI Coding Agent.
 
 Generate the requested project.
@@ -60,60 +60,59 @@ Requirements:
 User request: ${state.prompt}
 `;
 
-    const response = await llm.invoke(prompt);
-    const raw = String(response.content ?? "").trim();
+      const response = await llm.invoke(prompt);
+      const raw = String(response.content ?? "").trim();
 
-    const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "");
+      const cleaned = raw
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "");
 
-    let data;
+      let data;
 
-    try {
-      data = JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Project JSON parsing failed:", error.message);
-      throw new Error("Coding model returned invalid JSON.");
+      try {
+        data = JSON.parse(cleaned);
+      } catch (error) {
+        console.error("Project JSON parsing failed:", error.message);
+        throw new Error("Coding model returned invalid JSON.");
+      }
+
+      if (!Array.isArray(data.files) || data.files.length === 0) {
+        throw new Error("Coding model returned no project files.");
+      }
+
+      const files = data.files.map((file) => ({
+        name: file.name,
+        content: file.content,
+      }));
+
+      if (
+        files.some(
+          (file) =>
+            typeof file.name !== "string" || typeof file.content !== "string",
+        )
+      ) {
+        throw new Error("Generated files have an invalid structure.");
+      }
+
+      const artifacts = [
+        {
+          id: Date.now(),
+          type: "Project",
+          title: state.prompt,
+          files,
+        },
+      ];
+
+      console.log("Generated artifacts:", JSON.stringify(artifacts));
+
+      return {
+        ...state,
+        aiResponse: "Code generated successfully.",
+        artifacts,
+      };
     }
 
-    if (!Array.isArray(data.files) || data.files.length === 0) {
-      throw new Error("Coding model returned no project files.");
-    }
-
-    const files = data.files.map((file) => ({
-      name: file.name,
-      content: file.content,
-    }));
-
-    if (
-      files.some(
-        (file) =>
-          typeof file.name !== "string" ||
-          typeof file.content !== "string"
-      )
-    ) {
-      throw new Error("Generated files have an invalid structure.");
-    }
-
-    const artifacts = [
-      {
-        id: Date.now(),
-        type: "Project",
-        title: state.prompt,
-        files,
-      },
-    ];
-
-    console.log("Generated artifacts:", JSON.stringify(artifacts));
-
-    return {
-      ...state,
-      aiResponse: "Code generated successfully.",
-      artifacts,
-    };
-  }
-
-  const response = await llm.invoke(`
+    const response = await llm.invoke(`
 You are CortextAI Coding Agent.
 
 The user's request is classified as: ${intent}.
@@ -126,9 +125,16 @@ best practices, and optimized code when relevant.
 User request: ${state.prompt}
 `);
 
-  return {
-    ...state,
-    aiResponse: String(response.content ?? ""),
-    artifacts: [],
-  };
+    return {
+      ...state,
+      aiResponse: String(response.content ?? ""),
+      artifacts: [],
+    };
+  } catch (error) {
+    return {
+      ...state,
+      aiResponse: `Sorry, failed to generate code.`,
+      artifacts: [],
+    };
+  }
 };
