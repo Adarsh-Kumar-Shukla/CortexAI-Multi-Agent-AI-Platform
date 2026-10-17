@@ -1,4 +1,5 @@
 import { getModel } from "../config/llmModel.js"
+import { deductCredits } from "../utils/deductCredits.js"
 import { generatePdf } from "../utils/generatePdf.js"
 import { getFromS3 } from "../utils/getFromS3.js"
 import { uploadToS3 } from "../utils/uploadToS3.js"
@@ -28,11 +29,12 @@ export const pdfAgent=async(state)=>{
     `
     const res=await llm.invoke(prompt)
     const data=JSON.parse(res.content)
+    await deductCredits(state.userId, "pdf")
     const pdfBuffer=await generatePdf(data)
     const filename=`pdf-${Date.now()}.pdf`
     await uploadToS3(filename, pdfBuffer, "application/adf")
     const downLoadUrl=await getFromS3(filename, 24*60*60)
-
+    
     return {
   ...state,
   aiResponse: `# PDF Generated Successfully

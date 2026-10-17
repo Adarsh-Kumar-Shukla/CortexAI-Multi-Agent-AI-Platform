@@ -2,6 +2,7 @@ import { getModel } from "../config/llmModel.js";
 import axios from "axios";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { getFromS3 } from "../utils/getFromS3.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const visionAgent = async (state) => {
   try {
@@ -31,7 +32,7 @@ export const visionAgent = async (state) => {
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
 
     const imageRes = await axios.get(imageUrl, { responseType: "arraybuffer" });
-
+    await deductCredits(state.userId, "vision")
     const buffer = Buffer.from(imageRes.data);
     const fileName = `image-${Date.now()}.png`;
     await uploadToS3(fileName, buffer, "image/png");

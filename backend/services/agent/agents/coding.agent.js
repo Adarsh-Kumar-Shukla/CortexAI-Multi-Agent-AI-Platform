@@ -1,4 +1,5 @@
 import { getModel } from "../config/llmModel.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const coding = async (state) => {
   try {
@@ -104,7 +105,7 @@ User request: ${state.prompt}
       ];
 
       console.log("Generated artifacts:", JSON.stringify(artifacts));
-
+      await deductCredits(state.userId, "coding")
       return {
         ...state,
         aiResponse: "Code generated successfully.",
@@ -124,7 +125,7 @@ best practices, and optimized code when relevant.
 
 User request: ${state.prompt}
 `);
-
+      await deductCredits(state.userId, "coding")
     return {
       ...state,
       aiResponse: String(response.content ?? ""),

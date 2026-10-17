@@ -5,6 +5,7 @@ import { addMessage } from "../config/memory.js";
 export const agent = async (req, res) => {
   try {
     const { prompt, conversationId, agent: selectedAgent } = req.body;
+    const userId=req.headers["x-user-id"]
 
     if (!prompt?.trim() || !conversationId) {
       return res.status(400).json({
@@ -24,6 +25,7 @@ export const agent = async (req, res) => {
       prompt,
       conversationId,
       agent: selectedAgent,
+      userId
     });
 
     const answer = result.aiResponse ?? "";
