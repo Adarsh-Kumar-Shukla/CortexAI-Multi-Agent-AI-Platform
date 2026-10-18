@@ -2,8 +2,10 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModel } from "../config/llmModel.js";
 import fs from "fs/promises";
 import { deductCredits } from "../utils/deductCredits.js";
+import { checkLimit } from "../config/agentlimit.js";
 
 export const imageAnalyzer = async (state) => {
+  await checkLimit(state.userId, "image")
   try {
     const llm = await getModel("imageAnalyzer");
 console.log("Image analyzer model:", llm.model);
@@ -47,7 +49,7 @@ console.log("Image analyzer model:", llm.model);
 
     return {
       ...state,
-      aiResponse: "Failed to analyze file.",
+      aiResponse: error?.data?.message || "Failed to analyze file.",
     };
   }
   finally{

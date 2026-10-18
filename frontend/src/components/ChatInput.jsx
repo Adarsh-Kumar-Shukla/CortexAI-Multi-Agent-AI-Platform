@@ -14,7 +14,7 @@ import {
 import React, { useState } from "react";
 import sendMessage from "../features/sendMessage";
 import { useDispatch, useSelector } from "react-redux";
-import { addMessage, setArtifacts, setMessages } from "../redux/messageSlice";
+import { addMessage, setArtifacts, setIsLoading, setMessages } from "../redux/messageSlice";
 import { createConversation } from "../features/createConversation";
 import {
   addConversation,
@@ -28,7 +28,7 @@ const ChatInput = () => {
   const [value, setValue] = useState("");
   const { selectedConversation } = useSelector((state) => state.conversation);
   const dispatch = useDispatch();
-  const { messages } = useSelector((state) => state.message);
+  const { messages , isLoading} = useSelector((state) => state.message);
   const [selectedFile, setSelectedFile] = useState(null);
   const fileRef = useRef(null);
   const [seletedAgent, setSelectedAgent] = useState("Auto");
@@ -70,6 +70,7 @@ const ChatInput = () => {
     },
   ];
   const handleSendMessage = async () => {
+    dispatch(setIsLoading(true))
     let conversation = selectedConversation;
     if (!conversation) {
       const conv = await createConversation();
@@ -96,11 +97,15 @@ const ChatInput = () => {
     formData.append("prompt", value.trim());
     formData.append("conversationId", conversation?._id);
     formData.append("agent", seletedAgent.toLowerCase());
-    formData.append("file", selectedFile);
+    if(selectedFile){
+      formData.append("file", selectedFile);
+    }
+    
 
     dispatch(addMessage({ role: "user", content: value.trim() }));
     setValue("");
     const data = await sendMessage(formData);
+    dispatch(setIsLoading(false))
     setSelectedFile(null)
     dispatch(setArtifacts(data?.artifacts || []));
     dispatch(
@@ -196,7 +201,7 @@ const ChatInput = () => {
             </button>
           </div>
           <button
-            disabled={!value}
+            disabled={!value && isLoading}
             onClick={handleSendMessage}
             className={`flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer transition-all duration-150 ${value.trim() ? "bg-linear-to-br from-red-500 to-violet-700 hover:opacity-90 text-white" : "bg-white/[0.05] text-slate-600 cursor-not-allowed "}`}
           >

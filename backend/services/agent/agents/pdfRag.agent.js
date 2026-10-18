@@ -6,9 +6,11 @@ import { vectorStore } from "../config/vectorDB.js";
 import { getModel } from "../config/llmModel.js";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { deductCredits } from "../utils/deductCredits.js";
+import { checkLimit } from "../config/agentlimit.js";
 
 export const pdfRag = async (state) => {
   try {
+    await checkLimit(state.userId, "pdf")
     if (!state.file?.path) {
       throw new Error("PDF file is missing from graph state");
     }
@@ -75,7 +77,7 @@ export const pdfRag = async (state) => {
 
     return {
       ...state,
-      aiResponse: "Failed to analyze PDF.",
+      aiResponse: error?.data?.message || "Failed to analyze PDF.",
     };
   } finally {
     if (state.file?.path) {
