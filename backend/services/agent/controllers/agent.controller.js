@@ -5,6 +5,7 @@ import { addMessage } from "../config/memory.js";
 export const agent = async (req, res) => {
   try {
     const { prompt, conversationId, agent: selectedAgent } = req.body;
+    const file=req.file
     const userId=req.headers["x-user-id"]
 
     if (!prompt?.trim() || !conversationId) {
@@ -20,12 +21,15 @@ export const agent = async (req, res) => {
       content: prompt,
     });
 
+    
+
     // Run the selected agent
     const result = await graph.invoke({
       prompt,
       conversationId,
       agent: selectedAgent,
-      userId
+      userId,
+      file
     });
 
     const answer = result.aiResponse ?? "";
