@@ -5,6 +5,7 @@ import {
   ImageIcon,
   MessageSquare,
   Mic,
+  MicOff,
   Paperclip,
   Presentation,
   Send,
@@ -14,7 +15,12 @@ import {
 import React, { useState } from "react";
 import sendMessage from "../features/sendMessage";
 import { useDispatch, useSelector } from "react-redux";
-import { addMessage, setArtifacts, setIsLoading, setMessages } from "../redux/messageSlice";
+import {
+  addMessage,
+  setArtifacts,
+  setIsLoading,
+  setMessages,
+} from "../redux/messageSlice";
 import { createConversation } from "../features/createConversation";
 import {
   addConversation,
@@ -23,15 +29,19 @@ import {
 } from "../redux/conversationSlice";
 import { updateConversation } from "../features/updateConversation";
 import { useRef } from "react";
+import { useEffect } from "react";
 
 const ChatInput = () => {
   const [value, setValue] = useState("");
   const { selectedConversation } = useSelector((state) => state.conversation);
   const dispatch = useDispatch();
-  const { messages , isLoading} = useSelector((state) => state.message);
+  const { messages, isLoading } = useSelector((state) => state.message);
   const [selectedFile, setSelectedFile] = useState(null);
   const fileRef = useRef(null);
   const [seletedAgent, setSelectedAgent] = useState("Auto");
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const baseTextRef = useRef("");
   const agents = [
     {
       id: "auto",
@@ -69,8 +79,62 @@ const ChatInput = () => {
       label: "Search",
     },
   ];
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index++) {
+        transcript += event.results[index][0].transcript;
+      }
+
+      setValue(baseTextRef.current + transcript);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.abort();
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const toggleMic = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition not supported");
+      return;
+    }
+
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      baseTextRef.current = value.trim() ? value.trim() + " " : "";
+
+      recognitionRef.current.start();
+      setListening(true);
+    }
+  };
+
   const handleSendMessage = async () => {
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading(true));
     let conversation = selectedConversation;
     if (!conversation) {
       const conv = await createConversation();
@@ -97,16 +161,15 @@ const ChatInput = () => {
     formData.append("prompt", value.trim());
     formData.append("conversationId", conversation?._id);
     formData.append("agent", seletedAgent.toLowerCase());
-    if(selectedFile){
+    if (selectedFile) {
       formData.append("file", selectedFile);
     }
-    
 
     dispatch(addMessage({ role: "user", content: value.trim() }));
     setValue("");
     const data = await sendMessage(formData);
-    dispatch(setIsLoading(false))
-    setSelectedFile(null)
+    dispatch(setIsLoading(false));
+    setSelectedFile(null);
     dispatch(setArtifacts(data?.artifacts || []));
     dispatch(
       addMessage({
@@ -196,8 +259,12 @@ const ChatInput = () => {
             >
               <Paperclip size={16} />
             </button>
-            <button className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:text-slate-400 hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06] transition-all duration-150 bg-transparent cursor-pointer">
-              <Mic size={16} />
+            <button
+              onClick={toggleMic}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border border-transparent hover:border-white/[0.06] transition-all duration-150  cursor-pointer 
+            ${listening ? "bg-red-500 text-white" : "text-slate-600 hover:bg-white/[0.06]"}`}
+            >
+              {listening ? <Mic size={16} /> : <MicOff size={16} />}
             </button>
           </div>
           <button

@@ -6,7 +6,7 @@ import {
 import { getModel } from "../config/llmModel.js";
 import { getMemory } from "../config/memory.js";
 import { deductCredits } from "../utils/deductCredits.js";
-import { checkLimit } from "../config/agentlimit.js";
+import { checkLimit } from "../config/agentLimit.js";
 
 export const chatAgent = async (state) => {
   try {

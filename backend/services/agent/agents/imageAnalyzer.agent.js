@@ -2,7 +2,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModel } from "../config/llmModel.js";
 import fs from "fs/promises";
 import { deductCredits } from "../utils/deductCredits.js";
-import { checkLimit } from "../config/agentlimit.js";
+import { checkLimit } from "../config/agentLimit.js";
 
 export const imageAnalyzer = async (state) => {
   await checkLimit(state.userId, "image")
