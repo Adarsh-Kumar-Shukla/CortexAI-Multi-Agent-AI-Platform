@@ -25,9 +25,7 @@ const Home = () => {
   const googleLogin = async () => {
     const data = await signInWithPopup(auth, googleProvider);
     const token = await data.user.getIdToken();
-    console.log(token);
     await handleLogin(token);
-    console.log(data);
   };
   return (
     <div className="h-screen  flex bg-[#0d0f14] text-white overflow-hidden">
